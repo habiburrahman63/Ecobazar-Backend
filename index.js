@@ -3,7 +3,13 @@ const express = require("express");
 const cors = require("cors");
 const dbConfig = require("./dbconfig");
 
-const { registrationControllers } = require("./controllers/authControllers");
+const {
+  registrationControllers,
+  loginControllers,
+  forgotPasswordControllers,
+  resetPasswordControllers,
+  resendVeryficationEmail,
+} = require("./controllers/authControllers");
 const app = express();
 
 // MiddleWare
@@ -14,6 +20,10 @@ app.use(express.json());
 dbConfig();
 
 app.post("/ragistration", registrationControllers);
+app.post("/login", loginControllers);
+app.post("/forgotpassword", forgotPasswordControllers);
+app.post("/resetpassword:/token", resetPasswordControllers);
+app.post("/resendveryfication", resendVeryficationEmail);
 
 let port = process.env.PORT || 8000;
 

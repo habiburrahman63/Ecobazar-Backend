@@ -1,6 +1,7 @@
 const User = require("../models/userSchema");
-
-const { mailVeryfication } = require("../utils/email");
+const jwt = require("jsonwebtoken");
+const bcrypt = require("bcrypt");
+const { mailVeryfication, resetPasswordMail } = require("../utils/email");
 const { emptyfieldValidation } = require("../utils/validation");
 const { tokenGenerator } = require("../utils/tokenGenerator");
 const { existingData } = require("../utils/existingData");
@@ -12,7 +13,7 @@ const registrationControllers = async (req, res) => {
   let users = await existingData({ res, email: email });
 
   if (users) {
-    return;
+    return res.send({ message: "User Exist" });
   }
 
   if (!terms) {
@@ -27,9 +28,11 @@ const registrationControllers = async (req, res) => {
     return res.send({ message: "password not matched" });
   }
 
+  const hash = bcrypt.hashSync(password, 10);
+
   let user = new User({
     email: email,
-    password: password,
+    password: hash,
     terms: terms,
   });
   await user.save();
@@ -50,4 +53,92 @@ const registrationControllers = async (req, res) => {
   res.send({ message: "Registrition Successfully Done" });
 };
 
-module.exports = { registrationControllers };
+const loginControllers = async (req, res) => {
+  const { email, password } = req.body;
+
+  let users = await existingData({ res, email: email });
+
+  if (!users) {
+    return res.send({ message: "User Not Fount" });
+  }
+
+  emptyfieldValidation(res, email, password);
+
+  let pass = bcrypt.compareSync(password, users.password);
+
+  if (!pass) {
+    return res.send({ message: "Invalid Credential" });
+  }
+  res.send({ message: "Login Successfully Done" });
+};
+
+const forgotPasswordControllers = async (req, res) => {
+  const { email } = req.body;
+
+  emptyfieldValidation(res, email);
+
+  let users = await existingData({ res, email: email });
+
+  if (!users) {
+    return res.send({ message: "Email Not Fount" });
+  }
+
+  let token = tokenGenerator(
+    {
+      id: user._id,
+      email: user.email,
+    },
+    process.env.ACCESS_TOKEN_SECRET,
+    "1d",
+  );
+
+  resetPasswordMail(token, email);
+
+  res.send({ message: "Please Check your Email" });
+};
+
+const resetPasswordControllers = async (req, res) => {
+  let { newPassword, confirmPassword } = req.body;
+  let { token } = req.params;
+
+  if (newPassword == confirmPassword) {
+    return res.send({ message: "Confirm Password not Matched" });
+  }
+
+  jwt.verify(token, "shhhhh", function (err, decoded) {
+    if (err) {
+      res.send({ message: "Unauthorized" });
+    } else {
+      const hash = bcrypt.hashSync(newPassword, 10);
+      let updateData = User.findByIdAndUpdate(
+        { _id: decoded.id },
+        { password: newPassword },
+      );
+      res.send({ message: "password Updated" });
+    }
+  });
+};
+
+const resendVeryficationEmail = async (req, res) => {
+  let { email } = req.body;
+  let user = await User.findOne({ email: email });
+  let token = tokenGenerator(
+    {
+      id: user._id,
+      email: user.email,
+    },
+    process.env.ACCESS_TOKEN_SECRET,
+    "1d",
+  );
+  mailVeryfication(token, email);
+
+  res.send({ message: "Chack your email for Veryfication" });
+};
+
+module.exports = {
+  registrationControllers,
+  loginControllers,
+  forgotPasswordControllers,
+  resetPasswordControllers,
+  resendVeryficationEmail,
+};
