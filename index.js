@@ -1,3 +1,6 @@
+const dns = require("node:dns/promises");
+dns.setServers(["1.1.1.1", "8.8.8.8"]);
+
 require("dotenv").config();
 const express = require("express");
 const cors = require("cors");
@@ -27,19 +30,17 @@ const {
   deleteController,
   updateController,
 } = require("./controllers/userController");
+const upload = require("./utils/imageStore");
+const {
+  createCartController,
+  increDecreController,
+  getCartController,
+  proDeleteController,
+} = require("./controllers/cartController");
 const app = express();
 
-const storage = multer.diskStorage({
-  destination: function (req, file, cb) {
-    cb(null, "./uploads/products");
-  },
-  filename: function (req, file, cb) {
-    const uniqueSuffix = Date.now() + "-" + Math.round(Math.random() * 1e9);
-    cb(null, uniqueSuffix + "-" + file.orginalname);
-  },
-});
-
-const upload = multer({ storage: storage });
+// image Stor
+// imageStorDoc();
 
 // const limiter = rateLimit({
 //   windowMs: 15 * 60 * 1000,
@@ -71,7 +72,11 @@ app.get("/getsingleproduct/:id", getSingleProduct);
 app.get("/getdelete/:id", productDeleteController);
 app.post("/getupdate/id", upload.array("photos", 5), productUpdateController);
 
-// Order Management
+// Cart Management
+app.post("/cart/create", createCartController);
+app.post("/cart/update/:id", increDecreController);
+app.get("/getcart/:userId", getCartController);
+app.post("/deletecart/:id", proDeleteController);
 
 // User Management
 

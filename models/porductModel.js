@@ -28,7 +28,7 @@ const productSchema = new Schema(
       required: true,
       unique: true,
     },
-    stok: {
+    stock: {
       type: Number,
       min: 0,
       default: 0,
@@ -39,14 +39,14 @@ const productSchema = new Schema(
     shortDescription: {
       type: String,
     },
-    //   category: {
-    //     type: mongoose.Schema.Types.ObjectId,
-    //     ref: "Category",
-    //   },
-    //   subCategory: {
-    //     type: mongoose.Schema.Types.ObjectId,
-    //     ref: "Category",
-    //   },
+    // category: {
+    //   type: mongoose.Schema.Types.ObjectId,
+    //   ref: "Category",
+    // },
+    // subCategory: {
+    //   type: mongoose.Schema.Types.ObjectId,
+    //   ref: "Category",
+    // },
     category: {
       type: String,
       required: true,
