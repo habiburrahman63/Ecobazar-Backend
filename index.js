@@ -36,7 +36,9 @@ const {
   increDecreController,
   getCartController,
   proDeleteController,
+  cartDeleteController,
 } = require("./controllers/cartController");
+const { paymentController } = require("./controllers/paymentController");
 const app = express();
 
 // image Stor
@@ -75,8 +77,11 @@ app.post("/getupdate/id", upload.array("photos", 5), productUpdateController);
 // Cart Management
 app.post("/cart/create", createCartController);
 app.post("/cart/update/:id", increDecreController);
-app.get("/getcart/:userId", getCartController);
-app.post("/deletecart/:id", proDeleteController);
+app.get("/getcart/:userid", getCartController);
+app.delete("/deletecart/:id", cartDeleteController);
+
+// Order management
+app.post("/payment", paymentController);
 
 // User Management
 
