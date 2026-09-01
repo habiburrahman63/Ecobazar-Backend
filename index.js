@@ -36,7 +36,12 @@ const {
   increDecreController,
   getCartController,
   proDeleteController,
+  cartDeleteController,
 } = require("./controllers/cartController");
+const {
+  paymentController,
+  getOrderController,
+} = require("./controllers/paymentController");
 const app = express();
 
 // image Stor
@@ -58,7 +63,7 @@ app.use(express.json());
 // Database
 dbConfig();
 
-app.post("/ragistration", registrationControllers);
+app.post("/registration", registrationControllers);
 app.post("/login", loginControllers);
 app.post("/forgotpassword", forgotPasswordControllers);
 app.post("/resetpassword/:token", resetPasswordControllers);
@@ -75,8 +80,12 @@ app.post("/getupdate/id", upload.array("photos", 5), productUpdateController);
 // Cart Management
 app.post("/cart/create", createCartController);
 app.post("/cart/update/:id", increDecreController);
-app.get("/getcart/:userId", getCartController);
-app.post("/deletecart/:id", proDeleteController);
+app.get("/getcart/:userid", getCartController);
+app.delete("/deletecart/:id", cartDeleteController);
+
+// Order management
+app.post("/payment", paymentController);
+app.get("/getorder/:userid", getOrderController);
 
 // User Management
 
@@ -85,7 +94,7 @@ app.get("/singleuserid/:id", singleUserController);
 app.delete("/delete/:id", deleteController);
 app.post("/update/:id", updateController);
 
-let port = process.env.PORT || 8000;
+let port = process.env.PORT || 5000;
 
 app.listen(5000, () => {
   console.log(`Server runnig on ${port}`);

@@ -11,7 +11,7 @@ let getController = async (req, res) => {
 
 let singleUserController = async (req, res) => {
   const { id } = req.params;
-  let userData = await User.findById(id);
+  let userData = await User.findById(id).select("-password");
 
   res.send({
     message: `${userData.email}, Data`,

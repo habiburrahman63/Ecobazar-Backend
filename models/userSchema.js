@@ -2,23 +2,18 @@ const mongoose = require("mongoose");
 const { Schema } = mongoose;
 
 const userSchema = new Schema({
-  fristName: {
+  name: {
     type: String,
   },
-  lastName: {
-    type: String,
-  },
+
   email: {
     type: String,
   },
   password: {
     type: String,
   },
-  phoneNumber: {
+  phone: {
     type: String,
-  },
-  terms: {
-    type: Boolean,
   },
   profile: {
     type: String,
@@ -36,32 +31,31 @@ const userSchema = new Schema({
     type: Boolean,
     default: false,
   },
+  postalCode: {
+    type: String,
+  },
+  address: {
+    type: String,
+  },
+  city: {
+    type: String,
+  },
   billingAddress: {
-    fristName: {
-      type: String,
-    },
-    lastName: {
+    fullName: {
       type: String,
     },
     email: {
       type: String,
     },
-    companyName: {
-      type: String,
-    },
+
     street: {
       type: String,
     },
-    state: {
-      type: String,
-    },
+
     zipCode: {
       type: String,
     },
     phoneNumber: {
-      type: String,
-    },
-    country: {
       type: String,
     },
   },
