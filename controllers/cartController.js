@@ -43,9 +43,12 @@ const increDecreController = async (req, res) => {
   const { id } = req.params;
   const { type } = req.body;
 
+<<<<<<< HEAD
   console.log(id);
   console.log(type);
 
+=======
+>>>>>>> c4cdc392ab47d2f0cfe71436a4600a0592900e56
   const cart = await Cart.findOne({ product: id });
   const product = await Product.findOne({ _id: id });
 
@@ -102,7 +105,11 @@ const getCartController = async (req, res) => {
   let totalPrice = 0;
 
   cart.map((item) => {
+<<<<<<< HEAD
     totalPrice += item.totalPrice;
+=======
+    totalPrice += item.product.price;
+>>>>>>> c4cdc392ab47d2f0cfe71436a4600a0592900e56
   });
 
   res.json({

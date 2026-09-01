@@ -77,11 +77,8 @@ app.post("/getupdate/id", upload.array("photos", 5), productUpdateController);
 // Cart Management
 app.post("/cart/create", createCartController);
 app.post("/cart/update/:id", increDecreController);
-app.get("/getcart/:userid", getCartController);
-app.delete("/deletecart/:id", cartDeleteController);
-
-// Order management
-app.post("/payment", paymentController);
+app.get("/getcart/:userId", getCartController);
+app.post("/deletecart/:id", proDeleteController);
 
 // User Management
 
