@@ -43,11 +43,7 @@ const increDecreController = async (req, res) => {
   const { id } = req.params;
   const { type } = req.body;
 
-  console.log(id);
-  console.log(type);
-
-  const cart = await Cart.findOne({ product: id });
-  const product = await Product.findOne({ _id: id });
+  const product = await Product.findOne({ id });
 
   if (type == "plus") {
     cart.quantity += 1;
@@ -102,7 +98,7 @@ const getCartController = async (req, res) => {
   let totalPrice = 0;
 
   cart.map((item) => {
-    totalPrice += item.totalPrice;
+    totalPrice += item.price;
   });
 
   res.json({

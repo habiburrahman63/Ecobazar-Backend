@@ -87,6 +87,7 @@ const paymentController = async (req, res) => {
   }
 };
 
+<<<<<<< HEAD
 const getOrderController = async (req, res) => {
   try {
     const { userid } = req.params;
@@ -116,3 +117,6 @@ const getOrderController = async (req, res) => {
 };
 
 module.exports = { paymentController, getOrderController };
+=======
+module.exports = { paymentController };
+>>>>>>> f295fac397011a3dad7269137fd9af5c12ea2604

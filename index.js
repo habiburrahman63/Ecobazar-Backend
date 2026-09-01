@@ -38,10 +38,6 @@ const {
   proDeleteController,
   cartDeleteController,
 } = require("./controllers/cartController");
-const {
-  paymentController,
-  getOrderController,
-} = require("./controllers/paymentController");
 const app = express();
 
 // image Stor
