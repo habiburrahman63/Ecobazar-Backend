@@ -1,70 +1,67 @@
 const mongoose = require("mongoose");
 const { Schema } = mongoose;
 
-const userSchema = new Schema({
-  fristName: {
-    type: String,
-  },
-  lastName: {
-    type: String,
-  },
-  email: {
-    type: String,
-  },
-  password: {
-    type: String,
-  },
-  phoneNumber: {
-    type: String,
-  },
-  terms: {
-    type: Boolean,
-  },
-  profile: {
-    type: String,
-  },
-  isVeriFied: {
-    type: Boolean,
-    default: false,
-  },
-  roll: {
-    type: String,
-    enum: ["admin", "user", "editore", "vandore"],
-    default: "user",
-  },
-  isHold: {
-    type: Boolean,
-    default: false,
-  },
-  billingAddress: {
-    fristName: {
+const userSchema = new Schema(
+  {
+    name: {
       type: String,
     },
-    lastName: {
-      type: String,
-    },
+
     email: {
       type: String,
     },
-    companyName: {
+    password: {
       type: String,
     },
-    street: {
+    phone: {
       type: String,
     },
-    state: {
+    profile: {
       type: String,
     },
-    zipCode: {
+    isVeriFied: {
+      type: Boolean,
+      default: false,
+    },
+    roll: {
+      type: String,
+      enum: ["admin", "user", "editore", "vandore"],
+      default: "user",
+    },
+    isHold: {
+      type: Boolean,
+      default: false,
+    },
+    postalCode: {
       type: String,
     },
-    phoneNumber: {
+    address: {
       type: String,
     },
-    country: {
+    city: {
       type: String,
+    },
+    billingAddress: {
+      fullName: {
+        type: String,
+      },
+      email: {
+        type: String,
+      },
+
+      street: {
+        type: String,
+      },
+
+      zipCode: {
+        type: String,
+      },
+      phoneNumber: {
+        type: String,
+      },
     },
   },
-});
+  { timestamps: true },
+);
 
 module.exports = mongoose.model("User", userSchema);

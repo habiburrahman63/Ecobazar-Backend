@@ -7,7 +7,7 @@ const { tokenGenerator } = require("../utils/tokenGenerator");
 const { existingData } = require("../utils/existingData");
 
 const registrationControllers = async (req, res) => {
-  const { email, password, confirmPassword, terms } = req.body;
+  const { email, password, confirmPassword, name } = req.body;
 
   // existingData
   // let users = await existingData({ res, email: email });
@@ -20,16 +20,9 @@ const registrationControllers = async (req, res) => {
     });
   }
 
-  if (!terms) {
-    return res.send({
-      success: false,
-      message: "please Accept our terms and condition",
-    });
-  }
-
   // emptyFieldValidation
 
-  emptyfieldValidation(res, email, password, confirmPassword, terms);
+  emptyfieldValidation(res, email, password, confirmPassword);
 
   if (password !== confirmPassword) {
     return res.send({
@@ -43,7 +36,7 @@ const registrationControllers = async (req, res) => {
   let user = new User({
     email: email,
     password: hash,
-    terms: terms,
+    name: name,
   });
   await user.save();
 
@@ -93,6 +86,14 @@ const loginControllers = async (req, res) => {
   res.send({
     success: true,
     message: "Login Successfully Done",
+    data: {
+      _id: users._id,
+      name: users.name,
+      email: users.email,
+      isVeriFied: users.isVeriFied,
+      roll: users.roll,
+      isHold: users.isHold,
+    },
   });
 };
 
@@ -129,10 +130,10 @@ const forgotPasswordControllers = async (req, res) => {
 };
 
 const resetPasswordControllers = async (req, res) => {
-  let { newPassword, confirmPassword } = req.body;
+  let { password, confirmPassword } = req.body;
   let { token } = req.params;
 
-  if (newPassword !== confirmPassword) {
+  if (password !== confirmPassword) {
     return res.send({
       success: false,
       message: "Confirm Password not Matched",
@@ -150,7 +151,7 @@ const resetPasswordControllers = async (req, res) => {
           message: "Unauthorized",
         });
       } else {
-        const hash = bcrypt.hashSync(newPassword, 10);
+        const hash = bcrypt.hashSync(password, 10);
         let updateData = await User.findByIdAndUpdate(
           { _id: decoded.id },
           { password: hash },

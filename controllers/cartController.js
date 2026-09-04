@@ -2,9 +2,9 @@ const Cart = require("../models/cartModel");
 const Product = require("../models/porductModel");
 
 const createCartController = async (req, res) => {
-  const { proId, userId } = req.params;
+  const { proId, userId } = req.body;
 
-  const existingProduct = await Product.findOne({ proId });
+  const existingProduct = await Product.findOne({ _id: proId });
   if (!existingProduct) {
     return res.json({
       success: false,
@@ -12,13 +12,26 @@ const createCartController = async (req, res) => {
     });
   }
 
-  let cart = new Cart({
-    product: id,
-    quantity: 1,
-    userId: userId,
+  const existingProductOneCart = await Cart.findOne({
+    product: proId,
+    user: userId,
   });
 
-  await cart.save();
+  if (existingProductOneCart) {
+    existingProductOneCart.quantity += 1;
+    existingProductOneCart.totalPrice =
+      existingProductOneCart.totalPrice + existingProduct.price;
+    existingProductOneCart.save();
+  } else {
+    let cart = new Cart({
+      product: proId,
+      quantity: 1,
+      totalPrice: existingProduct.price,
+      user: userId,
+    });
+
+    await cart.save();
+  }
 
   res.json({
     success: true,
@@ -30,15 +43,21 @@ const increDecreController = async (req, res) => {
   const { id } = req.params;
   const { type } = req.body;
 
-  const product = await Product.findOne({ id });
+  console.log(id);
+  console.log(type);
+
+  const cart = await Cart.findOne({ product: id });
+  const product = await Product.findOne({ _id: id });
 
   if (type == "plus") {
-    product.quantity = product.quantity + 1;
+    cart.quantity += 1;
+    cart.totalPrice = cart.totalPrice + product.price;
+    await cart.save();
   } else {
-    product.quantity = product.quantity - 1;
+    cart.quantity -= 1;
+    cart.totalPrice = cart.totalPrice - product.price;
+    await cart.save();
   }
-
-  await product.save();
 
   res.json({
     success: true,
@@ -46,26 +65,44 @@ const increDecreController = async (req, res) => {
   });
 };
 
-const proDeleteController = async (req, res) => {
-  const { id } = req.params;
+// const cartDeleteController = async (req, res) => {
+//   const { id } = req.params;
 
-  await Cart.findByIdAndDelete(id);
+//   await Cart.findByIdAndDelete({ _id: id });
 
-  res.json({
-    success: true,
-    message: "Product deleted ",
-  });
+//   res.json({
+//     success: true,
+//     message: "Cart deleted ",
+//   });
+// };
+
+const cartDeleteController = async (req, res) => {
+  try {
+    const { id } = req.params;
+    const deleted = await Cart.findByIdAndDelete(id);
+
+    if (!deleted) {
+      return res.json({
+        success: false,
+        message: "Item already deleted or not found",
+      });
+    }
+
+    res.json({ success: true, message: "Cart item deleted" });
+  } catch (error) {
+    res.json({ success: false, message: error.message });
+  }
 };
 
 const getCartController = async (req, res) => {
   const { userid } = req.params;
 
-  const cart = await Cart.find({ _id: userid });
+  const cart = await Cart.find({ user: userid }).populate("user product");
 
   let totalPrice = 0;
 
   cart.map((item) => {
-    totalPrice += item.price;
+    totalPrice += item.totalPrice;
   });
 
   res.json({
@@ -77,6 +114,6 @@ const getCartController = async (req, res) => {
 module.exports = {
   createCartController,
   increDecreController,
-  proDeleteController,
+  cartDeleteController,
   getCartController,
 };
