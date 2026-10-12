@@ -75,19 +75,11 @@ const upload = require("./utils/imageStore");
 const { excelUpload } = require("./utils/imageStore");
 
 const {
-<<<<<<< HEAD
   createCartControleer,
   increDecreControleer,
   getCartControleer,
   cartDeleteControleer,
   clearCartControleer,
-=======
-  createCartController,
-  increDecreController,
-  getCartController,
-  proDeleteController,
-  cartDeleteController,
->>>>>>> 5708bdfbc5eac234b7169acedca8e68d50203f37
 } = require("./controllers/cartController");
 
 const {
@@ -150,7 +142,6 @@ app.use(
   })
 );
 
-<<<<<<< HEAD
 // Connect Database & run idempotent admin seed
 dbConfig().then(() => {
   seedInitialAdmin().catch((err) => {
@@ -184,12 +175,6 @@ app.post("/registration", authLimiter, registrationControleers);
 app.post("/login", authLimiter, loginControleers);
 app.post("/forgotpassword", forgotPasswordControleers);
 app.post("/resetpassword/:token", resetPasswordControleers);
-=======
-app.post("/registration", registrationControllers);
-app.post("/login", loginControllers);
-app.post("/forgotpassword", forgotPasswordControllers);
-app.post("/resetpassword/:token", resetPasswordControllers);
->>>>>>> 5708bdfbc5eac234b7169acedca8e68d50203f37
 app.post("/resendveryfication", resendVeryficationEmail);
 app.post("/verifyemail/:token", verifyemailControleer);
 app.get("/me", secureMiddleWare, getMeController);
@@ -335,7 +320,6 @@ app.patch(
   updateOrderStatusControleer
 );
 
-<<<<<<< HEAD
 // ==========================================
 // USER MANAGEMENT (ADMIN ONLY)
 // ==========================================
@@ -345,17 +329,6 @@ app.post("/getsearch", secureMiddleWare, adminMiddleWare, getSearchData);
 app.get("/singleuserid/:id", secureMiddleWare, singleUserControleer);
 app.delete("/delete/:id", secureMiddleWare, adminMiddleWare, deleteControleer);
 app.post("/update/:id", secureMiddleWare, updateControleer);
-=======
-// Cart Management
-app.post("/cart/create", createCartController);
-app.post("/cart/update/:id", increDecreController);
-app.get("/getcart/:userid", getCartController);
-app.delete("/deletecart/:id", cartDeleteController);
-
-// Order management
-app.post("/payment", paymentController);
-app.get("/getorder/:userid", getOrderController);
->>>>>>> 5708bdfbc5eac234b7169acedca8e68d50203f37
 
 // Multer error handler
 app.use((err, req, res, next) => {
@@ -374,7 +347,6 @@ app.use((err, req, res, next) => {
   });
 });
 
-<<<<<<< HEAD
 // Global Error Handler
 app.use((err, req, res, next) => {
   console.error("Unhandled Error:", err);
@@ -384,9 +356,6 @@ app.use((err, req, res, next) => {
     error: process.env.NODE_ENV === "production" ? undefined : err.message,
   });
 });
-=======
-let port = process.env.PORT || 5000;
->>>>>>> 5708bdfbc5eac234b7169acedca8e68d50203f37
 
 const port = process.env.PORT || 5000;
 app.listen(port, "0.0.0.0", () => {

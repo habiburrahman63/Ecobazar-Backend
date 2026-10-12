@@ -1,7 +1,6 @@
 const Cart = require("../models/cartModel");
 const Product = require("../models/porductModel");
 
-<<<<<<< HEAD
 /**
  * Calculates effective unit price taking active discounts into consideration
  */
@@ -88,48 +87,11 @@ const createCartControleer = async (req, res) => {
   } catch (error) {
     console.error("Add to cart error:", error);
     return res.status(500).json({
-=======
-const createCartController = async (req, res) => {
-  const { proId, userId } = req.body;
-
-  const existingProduct = await Product.findOne({ _id: proId });
-  if (!existingProduct) {
-    return res.json({
->>>>>>> 5708bdfbc5eac234b7169acedca8e68d50203f37
       success: false,
       message: "Failed to add product to cart",
       error: error.message,
     });
   }
-<<<<<<< HEAD
-=======
-
-  const existingProductOneCart = await Cart.findOne({
-    product: proId,
-    user: userId,
-  });
-
-  if (existingProductOneCart) {
-    existingProductOneCart.quantity += 1;
-    existingProductOneCart.totalPrice =
-      existingProductOneCart.totalPrice + existingProduct.price;
-    existingProductOneCart.save();
-  } else {
-    let cart = new Cart({
-      product: proId,
-      quantity: 1,
-      totalPrice: existingProduct.price,
-      user: userId,
-    });
-
-    await cart.save();
-  }
-
-  res.json({
-    success: true,
-    message: "Product added successfully",
-  });
->>>>>>> 5708bdfbc5eac234b7169acedca8e68d50203f37
 };
 
 const increDecreControleer = async (req, res) => {
@@ -150,7 +112,6 @@ const increDecreControleer = async (req, res) => {
       }).populate("product");
     }
 
-<<<<<<< HEAD
     if (!cartItem) {
       return res.status(404).json({
         success: false,
@@ -234,50 +195,6 @@ const cartDeleteControleer = async (req, res) => {
       message: "Failed to remove cart item",
       error: error.message,
     });
-=======
-  if (type == "plus") {
-    cart.quantity += 1;
-    cart.totalPrice = cart.totalPrice + product.price;
-    await cart.save();
-  } else {
-    cart.quantity -= 1;
-    cart.totalPrice = cart.totalPrice - product.price;
-    await cart.save();
-  }
-
-  res.json({
-    success: true,
-    message: "Cart Update successfully",
-  });
-};
-
-// const cartDeleteController = async (req, res) => {
-//   const { id } = req.params;
-
-//   await Cart.findByIdAndDelete({ _id: id });
-
-//   res.json({
-//     success: true,
-//     message: "Cart deleted ",
-//   });
-// };
-
-const cartDeleteController = async (req, res) => {
-  try {
-    const { id } = req.params;
-    const deleted = await Cart.findByIdAndDelete(id);
-
-    if (!deleted) {
-      return res.json({
-        success: false,
-        message: "Item already deleted or not found",
-      });
-    }
-
-    res.json({ success: true, message: "Cart item deleted" });
-  } catch (error) {
-    res.json({ success: false, message: error.message });
->>>>>>> 5708bdfbc5eac234b7169acedca8e68d50203f37
   }
 };
 
@@ -291,7 +208,6 @@ const clearCartControleer = async (req, res) => {
       });
     }
 
-<<<<<<< HEAD
     await Cart.deleteMany({ user: userId });
     return res.status(200).json({
       success: true,
@@ -306,9 +222,6 @@ const clearCartControleer = async (req, res) => {
     });
   }
 };
-=======
-  const cart = await Cart.find({ user: userid }).populate("user product");
->>>>>>> 5708bdfbc5eac234b7169acedca8e68d50203f37
 
 const getCartControleer = async (req, res) => {
   try {
@@ -374,16 +287,9 @@ const getCartControleer = async (req, res) => {
 };
 
 module.exports = {
-<<<<<<< HEAD
   createCartControleer,
   increDecreControleer,
   cartDeleteControleer,
   clearCartControleer,
   getCartControleer,
-=======
-  createCartController,
-  increDecreController,
-  cartDeleteController,
-  getCartController,
->>>>>>> 5708bdfbc5eac234b7169acedca8e68d50203f37
 };

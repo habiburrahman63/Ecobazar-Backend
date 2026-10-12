@@ -21,18 +21,12 @@ const getControleer = async (req, res) => {
   }
 };
 
-<<<<<<< HEAD
 const getAllDeleteUserControleer = async (req, res) => {
   try {
     const userData = await User.find({ isDelete: true })
       .select("-password")
       .sort({ updatedAt: -1 })
       .lean();
-=======
-let singleUserController = async (req, res) => {
-  const { id } = req.params;
-  let userData = await User.findById(id).select("-password");
->>>>>>> 5708bdfbc5eac234b7169acedca8e68d50203f37
 
     return res.status(200).json({
       success: true,
