@@ -304,10 +304,10 @@ app.delete("/clearcart/:userid", optionalAuth, clearCartControleer);
 // Order checkout initiation (Cash on delivery or AamarPay online payment)
 app.post("/payment", optionalAuth, paymentControleer);
 
-// AamarPay Webhook / Callback URLs (Called by AamarPay gateway via POST)
-app.post("/payment/success", paymentSuccessControleer);
-app.post("/payment/fail", paymentFailControleer);
-app.post("/payment/cancel", paymentCancelControleer);
+// AamarPay Webhook / Callback URLs (Called by AamarPay gateway via POST or browser redirect via GET)
+app.all("/payment/success", paymentSuccessControleer);
+app.all("/payment/fail", paymentFailControleer);
+app.all("/payment/cancel", paymentCancelControleer);
 
 // Order Queries & Admin Management
 app.get("/getorder/:userid", optionalAuth, getOrderControleer);

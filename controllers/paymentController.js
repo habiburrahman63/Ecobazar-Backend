@@ -182,6 +182,15 @@ const paymentControleer = async (req, res) => {
     const customerEmail =
       cus_email || req.user?.email || "customer@ecobazar.com";
 
+    const proto = req.headers["x-forwarded-proto"] || req.protocol || "http";
+    const host = req.headers["x-forwarded-host"] || req.headers.host;
+    const requestBackendUrl = host ? `${proto}://${host}` : "";
+
+    const effectiveBackendUrl =
+      process.env.BACKEND_URL && !process.env.BACKEND_URL.includes("localhost")
+        ? process.env.BACKEND_URL.trim().replace(/\/+$/, "")
+        : requestBackendUrl || backendUrl;
+
     const aamarPayPayload = {
       store_id: storeId,
       signature_key: signatureKey,
@@ -198,9 +207,9 @@ const paymentControleer = async (req, res) => {
       cus_state: resolvedAddress.city,
       cus_postcode: resolvedAddress.postalCode,
       cus_country: "Bangladesh",
-      success_url: `${backendUrl}/payment/success`,
-      fail_url: `${backendUrl}/payment/fail`,
-      cancel_url: `${backendUrl}/payment/cancel`,
+      success_url: `${effectiveBackendUrl}/payment/success`,
+      fail_url: `${effectiveBackendUrl}/payment/fail`,
+      cancel_url: `${effectiveBackendUrl}/payment/cancel`,
       type: "json",
     };
 
@@ -241,7 +250,7 @@ const paymentSuccessControleer = async (req, res) => {
   const { storeId, signatureKey, verifyUrl, frontendUrl } = getAamarPayConfig();
 
   try {
-    const payload = req.body || {};
+    const payload = { ...(req.query || {}), ...(req.body || {}) };
     const tranId = payload.mer_txnid || payload.tran_id;
 
     if (!tranId) {
@@ -336,7 +345,7 @@ const paymentSuccessControleer = async (req, res) => {
 const paymentFailControleer = async (req, res) => {
   const { frontendUrl } = getAamarPayConfig();
   try {
-    const payload = req.body || {};
+    const payload = { ...(req.query || {}), ...(req.body || {}) };
     const tranId = payload.mer_txnid || payload.tran_id;
 
     if (tranId) {
@@ -370,7 +379,7 @@ const paymentFailControleer = async (req, res) => {
 const paymentCancelControleer = async (req, res) => {
   const { frontendUrl } = getAamarPayConfig();
   try {
-    const payload = req.body || {};
+    const payload = { ...(req.query || {}), ...(req.body || {}) };
     const tranId = payload.mer_txnid || payload.tran_id;
 
     if (tranId) {
