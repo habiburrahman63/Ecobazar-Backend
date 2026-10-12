@@ -152,9 +152,18 @@ const paymentControleer = async (req, res) => {
       });
     }
 
-    // 2. AAMARPAY ONLINE PAYMENT FLOW
-    const { storeId, signatureKey, initUrl, backendUrl } = getAamarPayConfig();
+    const { storeId, signatureKey, initUrl, backendUrl, frontendUrl } =
+      getAamarPayConfig();
     const tranId = `ECO-${Date.now()}-${Math.floor(Math.random() * 1000)}`;
+
+    const resolvedFrontendUrl = (
+      req.body.frontendUrl ||
+      req.headers.origin ||
+      frontendUrl
+    )
+      .trim()
+      .replace(/[,;\s]+$/, "")
+      .replace(/\/+$/, "");
 
     const order = new Order({
       user: effectiveUserId,
@@ -165,6 +174,7 @@ const paymentControleer = async (req, res) => {
       status: "pending",
       shippingAddress: resolvedAddress,
       tranid: tranId,
+      frontendCallbackUrl: resolvedFrontendUrl,
     });
 
     await order.save();
@@ -243,10 +253,18 @@ const paymentSuccessControleer = async (req, res) => {
       return res.redirect(`${frontendUrl}/order-failed?reason=order_not_found`);
     }
 
+    const targetFrontend = (
+      order.frontendCallbackUrl ||
+      frontendUrl
+    )
+      .trim()
+      .replace(/[,;\s]+$/, "")
+      .replace(/\/+$/, "");
+
     // Idempotency: If order is already paid, redirect straight to success
     if (order.paymentStatus === "paid") {
       return res.redirect(
-        `${frontendUrl}/order-success?orderId=${order._id}&tranId=${order.tranid}`
+        `${targetFrontend}/order-success?orderId=${order._id}&tranId=${order.tranid}`
       );
     }
 
@@ -290,7 +308,7 @@ const paymentSuccessControleer = async (req, res) => {
       await Cart.deleteMany({ user: order.user });
 
       return res.redirect(
-        `${frontendUrl}/order-success?orderId=${order._id}&tranId=${order.tranid}`
+        `${targetFrontend}/order-success?orderId=${order._id}&tranId=${order.tranid}`
       );
     } else {
       console.warn("Payment verification failed or amount mismatch:", {
@@ -303,7 +321,7 @@ const paymentSuccessControleer = async (req, res) => {
       await order.save();
 
       return res.redirect(
-        `${frontendUrl}/order-failed?orderId=${order._id}&reason=payment_verification_failed`
+        `${targetFrontend}/order-failed?orderId=${order._id}&reason=payment_verification_failed`
       );
     }
   } catch (error) {
@@ -323,11 +341,19 @@ const paymentFailControleer = async (req, res) => {
 
     if (tranId) {
       const order = await Order.findOne({ tranid: tranId });
+      const targetFrontend = (
+        order?.frontendCallbackUrl ||
+        frontendUrl
+      )
+        .trim()
+        .replace(/[,;\s]+$/, "")
+        .replace(/\/+$/, "");
+
       if (order && order.paymentStatus !== "paid") {
         order.paymentStatus = "failed";
         await order.save();
         return res.redirect(
-          `${frontendUrl}/order-failed?orderId=${order._id}&reason=payment_failed`
+          `${targetFrontend}/order-failed?orderId=${order._id}&reason=payment_failed`
         );
       }
     }
@@ -349,11 +375,19 @@ const paymentCancelControleer = async (req, res) => {
 
     if (tranId) {
       const order = await Order.findOne({ tranid: tranId });
+      const targetFrontend = (
+        order?.frontendCallbackUrl ||
+        frontendUrl
+      )
+        .trim()
+        .replace(/[,;\s]+$/, "")
+        .replace(/\/+$/, "");
+
       if (order && order.paymentStatus !== "paid") {
         order.paymentStatus = "cancelled";
         await order.save();
         return res.redirect(
-          `${frontendUrl}/order-failed?orderId=${order._id}&reason=payment_cancelled`
+          `${targetFrontend}/order-failed?orderId=${order._id}&reason=payment_cancelled`
         );
       }
     }

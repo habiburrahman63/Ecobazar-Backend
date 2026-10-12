@@ -55,6 +55,9 @@ const orderSchema = new Schema(
     paymentDetails: {
       type: Schema.Types.Mixed,
     },
+    frontendCallbackUrl: {
+      type: String,
+    },
     status: {
       type: String,
       enum: ["pending", "processing", "shipped", "delivered", "cancelled"],
