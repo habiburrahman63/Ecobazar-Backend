@@ -5,9 +5,14 @@ const { mailVeryfication, resetPasswordMail } = require("../utils/email");
 const { hasEmptyField } = require("../utils/validation");
 const { tokenGenerator } = require("../utils/tokenGenerator");
 
+<<<<<<< HEAD
 const registrationControleers = async (req, res) => {
   try {
     const { email, password, confirmPassword, name } = req.body;
+=======
+const registrationControllers = async (req, res) => {
+  const { email, password, confirmPassword, name } = req.body;
+>>>>>>> 5708bdfbc5eac234b7169acedca8e68d50203f37
 
     if (hasEmptyField(name, email, password, confirmPassword)) {
       return res.status(400).json({
@@ -82,6 +87,48 @@ const registrationControleers = async (req, res) => {
       error: error.message,
     });
   }
+<<<<<<< HEAD
+=======
+
+  // emptyFieldValidation
+
+  emptyfieldValidation(res, email, password, confirmPassword);
+
+  if (password !== confirmPassword) {
+    return res.send({
+      success: false,
+      message: "password not matched",
+    });
+  }
+
+  const hash = bcrypt.hashSync(password, 10);
+
+  let user = new User({
+    email: email,
+    password: hash,
+    name: name,
+  });
+  await user.save();
+
+  // tokenGenerator
+
+  let token = tokenGenerator(
+    {
+      id: user._id,
+      email: user.email,
+    },
+    process.env.ACCESS_TOKEN_SECRET,
+    "1d",
+  );
+
+  mailVeryfication(token, email);
+
+  res.send({
+    success: true,
+    message:
+      "Registrition Successfull Please check your email for verification ",
+  });
+>>>>>>> 5708bdfbc5eac234b7169acedca8e68d50203f37
 };
 
 const loginControleers = async (req, res) => {
@@ -165,6 +212,32 @@ const loginControleers = async (req, res) => {
       error: error.message,
     });
   }
+<<<<<<< HEAD
+=======
+
+  emptyfieldValidation(res, email, password);
+
+  let pass = bcrypt.compareSync(password, users.password);
+
+  if (!pass) {
+    return res.send({
+      success: false,
+      message: "Invalid Credential",
+    });
+  }
+  res.send({
+    success: true,
+    message: "Login Successfully Done",
+    data: {
+      _id: users._id,
+      name: users.name,
+      email: users.email,
+      isVeriFied: users.isVeriFied,
+      roll: users.roll,
+      isHold: users.isHold,
+    },
+  });
+>>>>>>> 5708bdfbc5eac234b7169acedca8e68d50203f37
 };
 
 const forgotPasswordControleers = async (req, res) => {

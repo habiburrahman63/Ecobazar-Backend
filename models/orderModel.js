@@ -10,6 +10,7 @@ const orderSchema = new Schema(
     },
     products: [
       {
+<<<<<<< HEAD
         product: {
           type: mongoose.Schema.Types.ObjectId,
           ref: "Product",
@@ -22,10 +23,21 @@ const orderSchema = new Schema(
         image: { type: String },
       },
     ],
+=======
+        title: String,
+        price: Number,
+        sku: String,
+        quantity: Number,
+        totalPrice: Number,
+      },
+    ],
+
+>>>>>>> 5708bdfbc5eac234b7169acedca8e68d50203f37
     totalPrice: {
       type: Number,
       required: true,
     },
+<<<<<<< HEAD
     paymentMethod: {
       type: String,
       enum: ["aamarpay", "cod", "card", "bkash", "nagad"],
@@ -44,11 +56,15 @@ const orderSchema = new Schema(
       postalCode: String,
       notes: String,
     },
+=======
+
+>>>>>>> 5708bdfbc5eac234b7169acedca8e68d50203f37
     tranid: {
       type: String,
       required: true,
       unique: true,
     },
+<<<<<<< HEAD
     val_id: {
       type: String, // AamarPay pg_txnid
     },
@@ -70,3 +86,15 @@ orderSchema.index({ status: 1, createdAt: -1 });
 orderSchema.index({ createdAt: -1 });
 
 module.exports = mongoose.models.Order || mongoose.model("Order", orderSchema);
+=======
+    status: {
+      type: String,
+      enum: ["pending", "reject", "approved"],
+      default: "pending",
+    },
+  },
+  { timestamps: true },
+);
+
+module.exports = mongoose.model("Order", orderSchema);
+>>>>>>> 5708bdfbc5eac234b7169acedca8e68d50203f37

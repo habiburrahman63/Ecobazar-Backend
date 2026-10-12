@@ -1,9 +1,53 @@
 const mongoose = require("mongoose");
 const { Schema } = mongoose;
 
+<<<<<<< HEAD
 const userSchema = new Schema(
   {
     name: {
+=======
+const userSchema = new Schema({
+  name: {
+    type: String,
+  },
+
+  email: {
+    type: String,
+  },
+  password: {
+    type: String,
+  },
+  phone: {
+    type: String,
+  },
+  profile: {
+    type: String,
+  },
+  isVeriFied: {
+    type: Boolean,
+    default: false,
+  },
+  roll: {
+    type: String,
+    enum: ["admin", "user", "editore", "vandore"],
+    default: "user",
+  },
+  isHold: {
+    type: Boolean,
+    default: false,
+  },
+  postalCode: {
+    type: String,
+  },
+  address: {
+    type: String,
+  },
+  city: {
+    type: String,
+  },
+  billingAddress: {
+    fullName: {
+>>>>>>> 5708bdfbc5eac234b7169acedca8e68d50203f37
       type: String,
       trim: true,
       required: true,
@@ -15,6 +59,7 @@ const userSchema = new Schema(
       required: true,
       unique: true,
     },
+<<<<<<< HEAD
     password: {
       type: String,
       required: true,
@@ -38,10 +83,20 @@ const userSchema = new Schema(
     isHold: {
       type: Boolean,
       default: false,
+=======
+
+    street: {
+      type: String,
+    },
+
+    zipCode: {
+      type: String,
+>>>>>>> 5708bdfbc5eac234b7169acedca8e68d50203f37
     },
     lastLogin: {
       type: Date,
     },
+<<<<<<< HEAD
     createdBy: {
       type: Schema.Types.ObjectId,
       ref: "User",
@@ -69,6 +124,8 @@ const userSchema = new Schema(
       zipCode: { type: String },
       phoneNumber: { type: String },
     },
+=======
+>>>>>>> 5708bdfbc5eac234b7169acedca8e68d50203f37
   },
   { timestamps: true }
 );
