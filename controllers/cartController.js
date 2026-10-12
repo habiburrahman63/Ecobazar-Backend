@@ -1,119 +1,295 @@
 const Cart = require("../models/cartModel");
 const Product = require("../models/porductModel");
 
-const createCartController = async (req, res) => {
-  const { proId, userId } = req.body;
+/**
+ * Calculates effective unit price taking active discounts into consideration
+ */
+const getEffectivePrice = (product) => {
+  if (!product) return 0;
+  const price = Number(product.price) || 0;
+  const discount = Number(product.discount) || 0;
 
-  const existingProduct = await Product.findOne({ _id: proId });
-  if (!existingProduct) {
-    return res.json({
-      success: false,
-      message: "Product Not Found",
-    });
+  if (product.discountType === "flat") {
+    return Math.max(0, price - discount);
   }
+  if (product.discountType === "percent" || product.discountType === "percentage") {
+    return Math.max(0, Math.round(price - (price * discount) / 100));
+  }
+  return price;
+};
 
-  const existingProductOneCart = await Cart.findOne({
-    product: proId,
-    user: userId,
-  });
+const createCartControleer = async (req, res) => {
+  try {
+    const { proId, userId, quantity = 1 } = req.body;
+    const effectiveUserId = userId || (req.user && req.user._id);
 
-  if (existingProductOneCart) {
-    existingProductOneCart.quantity += 1;
-    existingProductOneCart.totalPrice =
-      existingProductOneCart.totalPrice + existingProduct.price;
-    existingProductOneCart.save();
-  } else {
-    let cart = new Cart({
+    if (!proId || !effectiveUserId) {
+      return res.status(400).json({
+        success: false,
+        message: "Product ID and User ID are required",
+      });
+    }
+
+    const product = await Product.findById(proId);
+    if (!product) {
+      return res.status(404).json({
+        success: false,
+        message: "Product not found",
+      });
+    }
+
+    if (product.stock <= 0) {
+      return res.status(400).json({
+        success: false,
+        message: "This product is currently out of stock",
+      });
+    }
+
+    const unitPrice = getEffectivePrice(product);
+    const addQty = Math.max(1, Number(quantity) || 1);
+
+    const existingCartItem = await Cart.findOne({
       product: proId,
-      quantity: 1,
-      totalPrice: existingProduct.price,
-      user: userId,
+      user: effectiveUserId,
     });
 
-    await cart.save();
-  }
+    if (existingCartItem) {
+      const newQty = existingCartItem.quantity + addQty;
+      if (newQty > product.stock) {
+        return res.status(400).json({
+          success: false,
+          message: `Cannot add more than available stock (${product.stock})`,
+        });
+      }
+      existingCartItem.quantity = newQty;
+      existingCartItem.totalPrice = newQty * unitPrice;
+      await existingCartItem.save();
+    } else {
+      if (addQty > product.stock) {
+        return res.status(400).json({
+          success: false,
+          message: `Cannot add more than available stock (${product.stock})`,
+        });
+      }
+      const cart = new Cart({
+        product: proId,
+        quantity: addQty,
+        totalPrice: addQty * unitPrice,
+        user: effectiveUserId,
+      });
+      await cart.save();
+    }
 
-  res.json({
-    success: true,
-    message: "Product added successfully",
-  });
+    return res.status(200).json({
+      success: true,
+      message: "Product added to cart successfully",
+    });
+  } catch (error) {
+    console.error("Add to cart error:", error);
+    return res.status(500).json({
+      success: false,
+      message: "Failed to add product to cart",
+      error: error.message,
+    });
+  }
 };
 
-const increDecreController = async (req, res) => {
-  const { id } = req.params;
-  const { type } = req.body;
+const increDecreControleer = async (req, res) => {
+  try {
+    const { id } = req.params;
+    const { type, userId } = req.body;
+    const effectiveUserId = userId || (req.user && req.user._id);
 
-  console.log(id);
-  console.log(type);
+    // Look up either by Cart item _id or by Product _id + User
+    let cartItem = null;
+    if (id.match(/^[0-9a-fA-F]{24}$/)) {
+      cartItem = await Cart.findById(id).populate("product");
+    }
+    if (!cartItem && effectiveUserId) {
+      cartItem = await Cart.findOne({
+        product: id,
+        user: effectiveUserId,
+      }).populate("product");
+    }
 
-  const cart = await Cart.findOne({ product: id });
-  const product = await Product.findOne({ _id: id });
+    if (!cartItem) {
+      return res.status(404).json({
+        success: false,
+        message: "Cart item not found",
+      });
+    }
 
-  if (type == "plus") {
-    cart.quantity += 1;
-    cart.totalPrice = cart.totalPrice + product.price;
-    await cart.save();
-  } else {
-    cart.quantity -= 1;
-    cart.totalPrice = cart.totalPrice - product.price;
-    await cart.save();
+    const product = cartItem.product;
+    if (!product) {
+      await Cart.findByIdAndDelete(cartItem._id);
+      return res.status(404).json({
+        success: false,
+        message: "Associated product no longer exists",
+      });
+    }
+
+    const unitPrice = getEffectivePrice(product);
+
+    if (type === "plus" || type === "increment") {
+      if (cartItem.quantity >= product.stock) {
+        return res.status(400).json({
+          success: false,
+          message: `Stock limit reached (${product.stock} available)`,
+        });
+      }
+      cartItem.quantity += 1;
+      cartItem.totalPrice = cartItem.quantity * unitPrice;
+      await cartItem.save();
+    } else {
+      if (cartItem.quantity <= 1) {
+        await Cart.findByIdAndDelete(cartItem._id);
+        return res.status(200).json({
+          success: true,
+          message: "Item removed from cart",
+        });
+      }
+      cartItem.quantity -= 1;
+      cartItem.totalPrice = cartItem.quantity * unitPrice;
+      await cartItem.save();
+    }
+
+    return res.status(200).json({
+      success: true,
+      message: "Cart updated successfully",
+      cartItem,
+    });
+  } catch (error) {
+    console.error("Cart quantity update error:", error);
+    return res.status(500).json({
+      success: false,
+      message: "Failed to update cart",
+      error: error.message,
+    });
   }
-
-  res.json({
-    success: true,
-    message: "Cart Update successfully",
-  });
 };
 
-// const cartDeleteController = async (req, res) => {
-//   const { id } = req.params;
-
-//   await Cart.findByIdAndDelete({ _id: id });
-
-//   res.json({
-//     success: true,
-//     message: "Cart deleted ",
-//   });
-// };
-
-const cartDeleteController = async (req, res) => {
+const cartDeleteControleer = async (req, res) => {
   try {
     const { id } = req.params;
     const deleted = await Cart.findByIdAndDelete(id);
 
     if (!deleted) {
-      return res.json({
-        success: false,
-        message: "Item already deleted or not found",
-      });
+      // Check if ID is a product ID and delete
+      const deletedByProduct = await Cart.findOneAndDelete({ product: id });
+      if (!deletedByProduct) {
+        return res.status(404).json({
+          success: false,
+          message: "Item not found in cart",
+        });
+      }
     }
 
-    res.json({ success: true, message: "Cart item deleted" });
+    return res.status(200).json({
+      success: true,
+      message: "Cart item removed successfully",
+    });
   } catch (error) {
-    res.json({ success: false, message: error.message });
+    console.error("Delete cart item error:", error);
+    return res.status(500).json({
+      success: false,
+      message: "Failed to remove cart item",
+      error: error.message,
+    });
   }
 };
 
-const getCartController = async (req, res) => {
-  const { userid } = req.params;
+const clearCartControleer = async (req, res) => {
+  try {
+    const userId = req.params.userid || (req.user && req.user._id);
+    if (!userId) {
+      return res.status(400).json({
+        success: false,
+        message: "User ID required",
+      });
+    }
 
-  const cart = await Cart.find({ user: userid }).populate("user product");
+    await Cart.deleteMany({ user: userId });
+    return res.status(200).json({
+      success: true,
+      message: "Cart cleared successfully",
+    });
+  } catch (error) {
+    console.error("Clear cart error:", error);
+    return res.status(500).json({
+      success: false,
+      message: "Failed to clear cart",
+      error: error.message,
+    });
+  }
+};
 
-  let totalPrice = 0;
+const getCartControleer = async (req, res) => {
+  try {
+    const { userid } = req.params;
+    const effectiveUserId = userid || (req.user && req.user._id);
 
-  cart.map((item) => {
-    totalPrice += item.totalPrice;
-  });
+    if (!effectiveUserId) {
+      return res.status(400).json({
+        success: false,
+        message: "User ID is required",
+      });
+    }
 
-  res.json({
-    cart,
-    totalPrice,
-  });
+    const rawCart = await Cart.find({ user: effectiveUserId })
+      .populate("product")
+      .lean();
+
+    // Filter out items where product may have been deleted
+    const validItems = [];
+    let totalPrice = 0;
+
+    for (const item of rawCart) {
+      if (!item.product) {
+        // Clean up orphaned cart items
+        await Cart.findByIdAndDelete(item._id);
+        continue;
+      }
+
+      const effectivePrice = getEffectivePrice(item.product);
+      const computedTotal = item.quantity * effectivePrice;
+      totalPrice += computedTotal;
+
+      validItems.push({
+        _id: item._id,
+        productId: item.product._id,
+        title: item.product.title,
+        price: effectivePrice,
+        originalPrice: item.product.price,
+        stock: item.product.stock,
+        quantity: item.quantity,
+        totalPrice: computedTotal,
+        image:
+          item.product.images?.find((img) => img.isMain)?.url ||
+          item.product.images?.[0]?.url ||
+          "",
+        product: item.product,
+      });
+    }
+
+    return res.status(200).json({
+      success: true,
+      cart: validItems,
+      totalPrice: totalPrice,
+    });
+  } catch (error) {
+    console.error("Get cart error:", error);
+    return res.status(500).json({
+      success: false,
+      message: "Failed to retrieve cart items",
+      error: error.message,
+    });
+  }
 };
 
 module.exports = {
-  createCartController,
-  increDecreController,
-  cartDeleteController,
-  getCartController,
+  createCartControleer,
+  increDecreControleer,
+  cartDeleteControleer,
+  clearCartControleer,
+  getCartControleer,
 };

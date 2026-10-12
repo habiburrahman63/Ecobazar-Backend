@@ -1,0 +1,38 @@
+services:
+  - type: web
+    name: ecobazar-backend
+    env: node
+    plan: free
+    region: singapore
+    buildCommand: npm install
+    startCommand: npm start
+    healthCheckPath: /health
+    autoDeploy: true
+    envVars:
+      - key: NODE_ENV
+        value: production
+      - key: PORT
+        value: 5000
+      - key: MONGODB_URL
+        sync: false
+      - key: ACCESS_TOKEN_SECRET
+        sync: false
+      - key: FRONTEND_URL
+        sync: false
+      - key: BACKEND_URL
+        sync: false
+      - key: AAMARPAY_STORE_ID
+        value: aamarpaytest
+      - key: AAMARPAY_SIGNATURE_KEY
+        value: dbb74894e82415a2f7ff0ec3a97e4183
+      - key: AAMARPAY_IS_SANDBOX
+        value: "true"
+      - key: EMAIL_USER
+        sync: false
+      - key: EMAIL_PASS
+        sync: false
+      - key: ADMIN_INITIAL_EMAIL
+        value: admin@gmail.com
+      - key: ADMIN_INITIAL_PASSWORD
+        value: admin123456
+
