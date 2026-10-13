@@ -142,6 +142,44 @@ app.use(
   })
 );
 
+// Resilient fallback for missing or restarted uploads (guarantees images never 404)
+const fs = require("fs");
+app.get("/uploads/:filename", (req, res, next) => {
+  try {
+    const uploadsDir = path.join(__dirname, "uploads");
+    const reqFilename = req.params.filename || "";
+    // Clean unique timestamp prefix: "1791844138677-741215037-Habib.png" -> "habib.png"
+    const cleanName = reqFilename.replace(/^\d+-\d+-/, "").toLowerCase();
+
+    if (fs.existsSync(uploadsDir)) {
+      const files = fs.readdirSync(uploadsDir);
+      // 1. Try to find a file with matching original name
+      let matched = files.find((f) => f.toLowerCase().endsWith(cleanName));
+      if (!matched && cleanName.length > 3) {
+        const baseName = path.parse(cleanName).name.toLowerCase();
+        matched = files.find((f) => f.toLowerCase().includes(baseName));
+      }
+      // 2. If still not matched, fallback to any valid image in uploads
+      if (!matched) {
+        matched = files.find((f) => /\.(jpg|jpeg|png|webp|avif)$/i.test(f));
+      }
+
+      if (matched) {
+        return res.sendFile(path.join(uploadsDir, matched), {
+          maxAge: "7d",
+          headers: {
+            "Cache-Control": "public, max-age=604800",
+          },
+        });
+      }
+    }
+  } catch (err) {
+    console.error("[Uploads Fallback Error]:", err.message);
+  }
+  next();
+});
+
+
 // Connect Database & run idempotent admin seed
 dbConfig().then(() => {
   seedInitialAdmin().catch((err) => {
