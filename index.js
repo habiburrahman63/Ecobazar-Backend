@@ -80,6 +80,7 @@ const {
   getCartControleer,
   cartDeleteControleer,
   clearCartControleer,
+  mergeCartControleer,
 } = require("./controllers/cartController");
 
 const {
@@ -327,6 +328,7 @@ app.post(
 // CART MANAGEMENT
 // ==========================================
 app.post("/cart/create", optionalAuth, createCartControleer);
+app.post("/cart/merge", optionalAuth, mergeCartControleer);
 app.post("/cart/update/:id", optionalAuth, increDecreControleer);
 app.get("/getcart/:userid", optionalAuth, getCartControleer);
 app.delete("/deletecart/:id", optionalAuth, cartDeleteControleer);

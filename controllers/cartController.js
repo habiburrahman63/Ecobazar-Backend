@@ -171,17 +171,33 @@ const increDecreControleer = async (req, res) => {
 const cartDeleteControleer = async (req, res) => {
   try {
     const { id } = req.params;
-    const deleted = await Cart.findByIdAndDelete(id);
+    const effectiveUserId =
+      req.query.userId || req.body?.userId || (req.user && req.user._id);
+
+    let deleted = null;
+    if (id.match(/^[0-9a-fA-F]{24}$/)) {
+      if (effectiveUserId) {
+        deleted = await Cart.findOneAndDelete({ _id: id, user: effectiveUserId });
+      } else {
+        deleted = await Cart.findByIdAndDelete(id);
+      }
+    }
+
+    if (!deleted && effectiveUserId) {
+      // Check if ID is a product ID and delete for THIS user
+      deleted = await Cart.findOneAndDelete({
+        product: id,
+        user: effectiveUserId,
+      });
+    } else if (!deleted) {
+      deleted = await Cart.findOneAndDelete({ product: id });
+    }
 
     if (!deleted) {
-      // Check if ID is a product ID and delete
-      const deletedByProduct = await Cart.findOneAndDelete({ product: id });
-      if (!deletedByProduct) {
-        return res.status(404).json({
-          success: false,
-          message: "Item not found in cart",
-        });
-      }
+      return res.status(404).json({
+        success: false,
+        message: "Item not found in cart",
+      });
     }
 
     return res.status(200).json({
@@ -223,6 +239,44 @@ const clearCartControleer = async (req, res) => {
   }
 };
 
+const getUserCartData = async (effectiveUserId) => {
+  const rawCart = await Cart.find({ user: effectiveUserId })
+    .populate("product")
+    .lean();
+
+  const validItems = [];
+  let totalPrice = 0;
+
+  for (const item of rawCart) {
+    if (!item.product) {
+      await Cart.findByIdAndDelete(item._id);
+      continue;
+    }
+
+    const effectivePrice = getEffectivePrice(item.product);
+    const computedTotal = item.quantity * effectivePrice;
+    totalPrice += computedTotal;
+
+    validItems.push({
+      _id: item._id,
+      productId: item.product._id,
+      title: item.product.title,
+      price: effectivePrice,
+      originalPrice: item.product.price,
+      stock: item.product.stock,
+      quantity: item.quantity,
+      totalPrice: computedTotal,
+      image:
+        item.product.images?.find((img) => img.isMain)?.url ||
+        item.product.images?.[0]?.url ||
+        "",
+      product: item.product,
+    });
+  }
+
+  return { cart: validItems, totalPrice };
+};
+
 const getCartControleer = async (req, res) => {
   try {
     const { userid } = req.params;
@@ -235,46 +289,12 @@ const getCartControleer = async (req, res) => {
       });
     }
 
-    const rawCart = await Cart.find({ user: effectiveUserId })
-      .populate("product")
-      .lean();
-
-    // Filter out items where product may have been deleted
-    const validItems = [];
-    let totalPrice = 0;
-
-    for (const item of rawCart) {
-      if (!item.product) {
-        // Clean up orphaned cart items
-        await Cart.findByIdAndDelete(item._id);
-        continue;
-      }
-
-      const effectivePrice = getEffectivePrice(item.product);
-      const computedTotal = item.quantity * effectivePrice;
-      totalPrice += computedTotal;
-
-      validItems.push({
-        _id: item._id,
-        productId: item.product._id,
-        title: item.product.title,
-        price: effectivePrice,
-        originalPrice: item.product.price,
-        stock: item.product.stock,
-        quantity: item.quantity,
-        totalPrice: computedTotal,
-        image:
-          item.product.images?.find((img) => img.isMain)?.url ||
-          item.product.images?.[0]?.url ||
-          "",
-        product: item.product,
-      });
-    }
+    const { cart, totalPrice } = await getUserCartData(effectiveUserId);
 
     return res.status(200).json({
       success: true,
-      cart: validItems,
-      totalPrice: totalPrice,
+      cart,
+      totalPrice,
     });
   } catch (error) {
     console.error("Get cart error:", error);
@@ -286,10 +306,83 @@ const getCartControleer = async (req, res) => {
   }
 };
 
+const mergeCartControleer = async (req, res) => {
+  try {
+    const { userId, items } = req.body;
+    const effectiveUserId = userId || (req.user && req.user._id);
+
+    if (!effectiveUserId) {
+      return res.status(400).json({
+        success: false,
+        message: "User ID is required to merge cart",
+      });
+    }
+
+    if (Array.isArray(items) && items.length > 0) {
+      for (const item of items) {
+        const proId = item.productId || item.proId || item._id;
+        const addQty = Math.max(1, Number(item.quantity) || 1);
+
+        if (!proId || !String(proId).match(/^[0-9a-fA-F]{24}$/)) {
+          continue;
+        }
+
+        const product = await Product.findById(proId);
+        if (!product || product.stock <= 0) {
+          continue;
+        }
+
+        const unitPrice = getEffectivePrice(product);
+
+        const existingCartItem = await Cart.findOne({
+          product: proId,
+          user: effectiveUserId,
+        });
+
+        if (existingCartItem) {
+          const newQty = Math.min(
+            existingCartItem.quantity + addQty,
+            product.stock
+          );
+          existingCartItem.quantity = newQty;
+          existingCartItem.totalPrice = newQty * unitPrice;
+          await existingCartItem.save();
+        } else {
+          const finalQty = Math.min(addQty, product.stock);
+          const cart = new Cart({
+            product: proId,
+            quantity: finalQty,
+            totalPrice: finalQty * unitPrice,
+            user: effectiveUserId,
+          });
+          await cart.save();
+        }
+      }
+    }
+
+    const { cart, totalPrice } = await getUserCartData(effectiveUserId);
+
+    return res.status(200).json({
+      success: true,
+      message: "Cart merged successfully",
+      cart,
+      totalPrice,
+    });
+  } catch (error) {
+    console.error("Merge cart error:", error);
+    return res.status(500).json({
+      success: false,
+      message: "Failed to merge cart",
+      error: error.message,
+    });
+  }
+};
+
 module.exports = {
   createCartControleer,
   increDecreControleer,
   cartDeleteControleer,
   clearCartControleer,
   getCartControleer,
+  mergeCartControleer,
 };
